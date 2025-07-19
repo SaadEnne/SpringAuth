@@ -1,0 +1,349 @@
+{
+	"info": {
+		"_postman_id": "69a9165c-bf8b-4a9e-83b2-9965ac04227a",
+		"name": "Users_movies",
+		"description": "## 📘 **User Management API Documentation**\n\n### **🌐 Base URL:**\n\n```\nhttp://localhost:8081\n\n ```\n\n---\n\n## **🔐 API Endpoints**\n\n### **1\\. 📝 Register User (Public)**\n\n**POST** `/api/users`\n\nRegisters a new user.\n\n**Headers:**\n\n```\nContent-Type: application/json\n\n ```\n\n**Request Body:**\n\n``` json\n{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"avatar\": \"https://example.com/avatar.jpg\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"USER\",\n  \"emailVerified\": true,\n  \"isActive\": true\n}\n\n ```\n\n**Response:** **`201 Created`**\n\n``` json\n{\n  \"id\": 1,\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"role\": \"USER\",\n  \"emailVerified\": true,\n  \"isActive\": true,\n  \"createdAt\": \"2024-07-18T00:30:00\",\n  \"lastLogin\": null\n}\n\n ```\n\n---\n\n### **2\\. 🔐 Login (Public)**\n\n**POST** `/api/auth/login`\n\nAuthenticates user and returns JWT.\n\n**Headers:**\n\n```\nContent-Type: application/json\n\n ```\n\n**Request Body:**\n\n``` json\n{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}\n\n ```\n\n**Response:** **`200 OK`**\n\n``` json\n{\n  \"token\": \"eyJhbGciOiJIUzI1NiJ9...\",\n  \"message\": \"Login successful\",\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"john.doe@example.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\"\n  }\n}\n\n ```\n\n---\n\n### **3\\. 👤 Get Current User (Private)**\n\n**GET** `/api/users/me`\n\nReturns authenticated user's profile.\n\n**Headers:**\n\n```\nAuthorization: Bearer YOUR_JWT_TOKEN\n\n ```\n\n**Response:** **`200 OK`**\n\n``` json\n{\n  \"id\": 1,\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"role\": \"USER\",\n  \"emailVerified\": true,\n  \"isActive\": true,\n  \"createdAt\": \"2024-07-18T00:30:00\",\n  \"lastLogin\": \"2024-07-18T00:35:00\"\n}\n\n ```\n\n---\n\n### **4\\. 🔍 Get User by ID (Private)**\n\n**GET** `/api/users/{id}`\n\nReturns a user only if the ID matches the current authenticated user.\n\n**Headers:**\n\n```\nAuthorization: Bearer YOUR_JWT_TOKEN\n\n ```\n\n**Response:** **`200 OK`**\n\n``` json\n{\n  \"id\": 1,\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"role\": \"USER\",\n  \"emailVerified\": true,\n  \"isActive\": true\n}\n\n ```\n\n**Error:** **`403 Forbidden`**\n\n``` json\n{\n  \"error\": \"Access denied\"\n}\n\n ```\n\n---\n\n### **5\\. ✏️ Update User (Private)**\n\n**PUT** `/api/users/{id}`\n\nUpdates the current authenticated user's info.\n\n**Headers:**\n\n```\nAuthorization: Bearer YOUR_JWT_TOKEN\nContent-Type: application/json\n\n ```\n\n**Request Body:**\n\n``` json\n{\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"avatar\": \"https://example.com/new-avatar.jpg\",\n  \"password\": \"newpassword123\"\n}\n\n ```\n\n**Response:** **`200 OK`**\n\n``` json\n{\n  \"id\": 1,\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"avatar\": \"https://example.com/new-avatar.jpg\",\n  \"email\": \"john.doe@example.com\",\n  \"role\": \"USER\",\n  \"emailVerified\": true,\n  \"isActive\": true\n}\n\n ```\n\n---\n\n### **6\\. ❌ Delete User (Private)**\n\n**DELETE** `/api/users/{id}`\n\nDeletes the authenticated user's account.\n\n**Headers:**\n\n```\nAuthorization: Bearer YOUR_JWT_TOKEN\n\n ```\n\n**Response:** **`204 No Content`**\n\n---\n\n### **7\\. 🚪 Logout (Private)**\n\n**POST** `/api/auth/logout`\n\nClears token on client-side (optional server blacklist).\n\n**Headers:**\n\n```\nAuthorization: Bearer YOUR_JWT_TOKEN\nContent-Type: application/json\n\n ```\n\n**Response:** **`200 OK`**\n\n``` json\n{\n  \"message\": \"Logout successful\"\n}\n\n ```\n\n---\n\n## 🧪 **Postman Testing Instructions**\n\n### 1\\. Create Postman Collection:\n\n- Name: **User Management API**\n    \n\n### 2\\. Create Environment:\n\n- Variable: `base_url` = `http://localhost:8081`\n    \n- Variable: `jwt_token` = _(leave empty)_\n    \n\n### 3\\. Test Public Routes:\n\n- `POST {{base_url}}/api/users` – Register\n    \n- `POST {{base_url}}/api/auth/login` – Login\n    \n\n### 4\\. Save Token:\n\n- Copy `token` from login response\n    \n- Set `jwt_token` variable in environment\n    \n\n### 5\\. Test Protected Routes:\n\nUse Authorization Header:\n\n```\nAuthorization: Bearer {{jwt_token}}\n\n ```\n\n- `GET {{base_url}}/api/users/me`\n    \n- `GET {{base_url}}/api/users/1`\n    \n- `PUT {{base_url}}/api/users/1`\n    \n- `DELETE {{base_url}}/api/users/1`\n    \n- `POST {{base_url}}/api/auth/logout`\n    \n\n---\n\n## 🛡️ **Security Features**\n\n| Feature | Description |\n| --- | --- |\n| 🔒 JWT Auth | All private routes require bearer token |\n| 👤 Ownership Check | Users access only their own data |\n| 🔐 Password Hashing | Passwords are securely encrypted (BCrypt) |\n| 📧 Email Unique | Prevent duplicate emails |\n| 📅 Login Tracking | `lastLogin` updated on login |\n\n---\n\n## ❗ **Common Errors**\n\n| Status | Reason |\n| --- | --- |\n| 401 | Missing or invalid token |\n| 403 | Trying to access another user's data |\n| 404 | User not found |\n| 400 | Invalid request or duplicate email |\n\n---",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42615347"
+	},
+	"item": [
+		{
+			"name": "Get me",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huQGV4YW1wbGVBLmNvbSIsImlhdCI6MTc1MjkzMjQ2MiwiZXhwIjoxNzUyOTY4NDYyfQ.Ah1lDJGWXcJomMwaT-etsitFBmT-KbHw5DEfB7vVEMI",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8081/api/users/me",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"users",
+						"me"
+					]
+				},
+				"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+			},
+			"response": []
+		},
+		{
+			"name": "Get user by id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huQGV4YW1wbGVBLmNvbSIsImlhdCI6MTc1MjkzMjQ2MiwiZXhwIjoxNzUyOTY4NDYyfQ.Ah1lDJGWXcJomMwaT-etsitFBmT-KbHw5DEfB7vVEMI",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8081/api/users/5",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"users",
+						"5"
+					]
+				},
+				"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+			},
+			"response": []
+		},
+		{
+			"name": "Post data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "   {\n     \"firstName\": \"John\",\n     \"lastName\": \"Doe\",\n     \"email\": \"john@exampleA.com\",\n     \"password\": \"password123\"\n   }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/users",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"users"
+					]
+				},
+				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "   {\n     \"email\": \"john@exampleA.com\",\n     \"password\": \"password123\"\n   }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "Update data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful PUT request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huQGV4YW1wbGVBLmNvbSIsImlhdCI6MTc1MjkzMjQ2MiwiZXhwIjoxNzUyOTY4NDYyfQ.Ah1lDJGWXcJomMwaT-etsitFBmT-KbHw5DEfB7vVEMI",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"avatar\": \"https://example.com/new-avatar.jpg\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/users/5",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"users",
+						"5"
+					]
+				},
+				"description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "Delete data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful DELETE request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 202, 204]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huQGV4YW1wbGVBLmNvbSIsImlhdCI6MTc1MjkzMjQ2MiwiZXhwIjoxNzUyOTY4NDYyfQ.Ah1lDJGWXcJomMwaT-etsitFBmT-KbHw5DEfB7vVEMI",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/users/5",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"users",
+						"5"
+					]
+				},
+				"description": "This is a DELETE request, and it is used to delete data that was previously created via a POST request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful DELETE request typically returns a `200 OK`, `202 Accepted`, or `204 No Content` response code."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "id",
+			"value": "1"
+		},
+		{
+			"key": "base_url",
+			"value": "http://localhost:8081/api/users"
+		}
+	]
+}
