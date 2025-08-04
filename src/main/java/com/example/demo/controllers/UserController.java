@@ -35,19 +35,21 @@ public class UserController {
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody User user) {
         try {
-            // Check if email already exists
-            if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Email already exists"));
-            }
-
-            // Validate required fields
             if (user.getEmail() == null || user.getEmail().isEmpty() ||
                     user.getPassword() == null || user.getPassword().isEmpty() ||
                     user.getFirstName() == null || user.getFirstName().isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Email, password, and firstName are required"));
+                        .body(Map.of("message", "Email, password, and firstName are required"));
             }
+
+            // Check if email already exists
+            if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Email already exists"));
+            }
+
+            // Validate required fields
+
 
             // Encode password
             user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -59,13 +61,13 @@ public class UserController {
 
             User savedUser = userRepository.save(user);
 
-            // Return user without password
+
             savedUser.setPassword(null);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Failed to create user: " + e.getMessage()));
+                    .body(Map.of("message", "Failed to create user: " + e.getMessage()));
         }
     }
 
