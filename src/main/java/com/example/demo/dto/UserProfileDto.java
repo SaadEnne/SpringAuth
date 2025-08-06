@@ -1,30 +1,13 @@
-package com.example.demo.models;
+package com.example.demo.dto;
 
-import jakarta.persistence.*;
-import java.time.LocalDateTime;
 import java.time.LocalDate;
-import jakarta.persistence.PrePersist;
 
-@Entity
-@Table(name = "users")
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class UserProfileDto {
     private Long id;
-
     private String firstName;
     private String lastName;
-    private String avatar;
     private String email;
-    private String password;
-    private String role;
-    private Boolean emailVerified;
-    private LocalDateTime createdAt;
-    private LocalDateTime lastLogin;
-    private Boolean isActive;
-
-    // Additional profile fields
+    private String avatar;
     private String bio;
     private String location;
     private String website;
@@ -33,29 +16,33 @@ public class User {
     private String preferredLanguage;
     private String timezone;
     private Boolean notificationsEnabled;
-    private String profileVisibility; // public, private, friends
+    private String profileVisibility;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
-        if (this.emailVerified == null) {
-            this.emailVerified = false;
-        }
-        if (this.role == null) {
-            this.role = "USER";
-        }
-        if (this.notificationsEnabled == null) {
-            this.notificationsEnabled = true;
-        }
-        if (this.profileVisibility == null) {
-            this.profileVisibility = "public";
-        }
+    // Default constructor
+    public UserProfileDto() {
     }
 
-    // === Getters ===
+    // Constructor with all fields
+    public UserProfileDto(Long id, String firstName, String lastName, String email, String avatar,
+            String bio, String location, String website, String phone, LocalDate dateOfBirth,
+            String preferredLanguage, String timezone, Boolean notificationsEnabled, String profileVisibility) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.avatar = avatar;
+        this.bio = bio;
+        this.location = location;
+        this.website = website;
+        this.phone = phone;
+        this.dateOfBirth = dateOfBirth;
+        this.preferredLanguage = preferredLanguage;
+        this.timezone = timezone;
+        this.notificationsEnabled = notificationsEnabled;
+        this.profileVisibility = profileVisibility;
+    }
+
+    // Getters
     public Long getId() {
         return id;
     }
@@ -68,36 +55,12 @@ public class User {
         return lastName;
     }
 
-    public String getAvatar() {
-        return avatar;
-    }
-
     public String getEmail() {
         return email;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public Boolean getEmailVerified() {
-        return emailVerified;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getLastLogin() {
-        return lastLogin;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
+    public String getAvatar() {
+        return avatar;
     }
 
     public String getBio() {
@@ -136,7 +99,7 @@ public class User {
         return profileVisibility;
     }
 
-    // === Setters ===
+    // Setters
     public void setId(Long id) {
         this.id = id;
     }
@@ -149,36 +112,12 @@ public class User {
         this.lastName = lastName;
     }
 
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
-    }
-
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public void setEmailVerified(Boolean emailVerified) {
-        this.emailVerified = emailVerified;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public void setLastLogin(LocalDateTime lastLogin) {
-        this.lastLogin = lastLogin;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public void setBio(String bio) {

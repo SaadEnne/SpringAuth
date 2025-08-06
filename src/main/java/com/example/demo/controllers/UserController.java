@@ -1,159 +1,285 @@
 package com.example.demo.controllers;
 
+import com.example.demo.dto.PasswordChangeDto;
+import com.example.demo.dto.UserProfileDto;
 import com.example.demo.models.User;
 import com.example.demo.repositories.UserRepository;
 import com.example.demo.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private JwtUtil jwtUtil;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    // Public endpoint - no authentication required
+    /**
+     * Create new user (registration)
+     */
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody User user) {
         try {
+            // Validate required fields
             if (user.getEmail() == null || user.getEmail().isEmpty() ||
                     user.getPassword() == null || user.getPassword().isEmpty() ||
                     user.getFirstName() == null || user.getFirstName().isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Email, password, and firstName are required"));
+                        .body(Map.of("error", "Email, password, and firstName are required"));
             }
 
             // Check if email already exists
             if (userRepository.findByEmail(user.getEmail()).isPresent()) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("message", "Email already exists"));
+                        .body(Map.of("error", "Email already exists"));
             }
-
-            // Validate required fields
-
 
             // Encode password
             user.setPassword(passwordEncoder.encode(user.getPassword()));
 
             // Set default values
-            user.setCreatedAt(LocalDateTime.now());
             user.setIsActive(true);
             user.setRole("USER");
+            user.setEmailVerified(false);
+            user.setProfileVisibility("public");
+            user.setNotificationsEnabled(true);
 
             User savedUser = userRepository.save(user);
 
+            // Return user data without password
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", savedUser.getId());
+            response.put("firstName", savedUser.getFirstName());
+            response.put("lastName", savedUser.getLastName());
+            response.put("email", savedUser.getEmail());
+            response.put("message", "User created successfully");
 
-            savedUser.setPassword(null);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Failed to create user: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to create user: " + e.getMessage()));
         }
     }
 
-    // Get current user profile (authenticated user only)
-    @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email).orElse(null);
+    /**
+     * Get current user profile
+     */
+    @GetMapping("/profile")
+    public ResponseEntity<?> getCurrentUserProfile(@RequestHeader("Authorization") String authorization) {
+        try {
+            // Extract user ID from JWT token
+            String token = authorization.replace("Bearer ", "");
+            String userEmail = jwtUtil.extractUsername(token);
 
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            Optional<User> userOpt = userRepository.findByEmail(userEmail);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found"));
+            }
+
+            User user = userOpt.get();
+            UserProfileDto profileDto = convertToDto(user);
+
+            return ResponseEntity.ok(profileDto);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to retrieve user profile"));
         }
-
-        return ResponseEntity.ok(user);
     }
 
-    // Get user by ID (only if authenticated user is requesting their own data)
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User currentUser = userRepository.findByEmail(email).orElse(null);
+    /**
+     * Update user profile
+     */
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateUserProfile(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody UserProfileDto profileDto) {
+        try {
+            // Extract user ID from JWT token
+            String token = authorization.replace("Bearer ", "");
+            String userEmail = jwtUtil.extractUsername(token);
 
-        if (currentUser == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Current user not found");
+            Optional<User> userOpt = userRepository.findByEmail(userEmail);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found"));
+            }
+
+            User user = userOpt.get();
+
+            // Update user fields (excluding sensitive fields like email and password)
+            user.setFirstName(profileDto.getFirstName());
+            user.setLastName(profileDto.getLastName());
+            user.setAvatar(profileDto.getAvatar());
+            user.setBio(profileDto.getBio());
+            user.setLocation(profileDto.getLocation());
+            user.setWebsite(profileDto.getWebsite());
+            user.setPhone(profileDto.getPhone());
+            user.setDateOfBirth(profileDto.getDateOfBirth());
+            user.setPreferredLanguage(profileDto.getPreferredLanguage());
+            user.setTimezone(profileDto.getTimezone());
+            user.setNotificationsEnabled(profileDto.getNotificationsEnabled());
+            user.setProfileVisibility(profileDto.getProfileVisibility());
+
+            User savedUser = userRepository.save(user);
+            UserProfileDto updatedProfileDto = convertToDto(savedUser);
+
+            return ResponseEntity.ok(updatedProfileDto);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to update user profile"));
         }
-
-        // Only allow users to get their own data
-        if (!currentUser.getId().equals(id)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
-        }
-
-        return ResponseEntity.ok(currentUser);
     }
 
-    // Update user (only if authenticated user is updating their own data)
-    @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User currentUser = userRepository.findByEmail(email).orElse(null);
+    /**
+     * Change user password
+     */
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody PasswordChangeDto passwordDto) {
+        try {
+            // Extract user ID from JWT token
+            String token = authorization.replace("Bearer ", "");
+            String userEmail = jwtUtil.extractUsername(token);
 
-        if (currentUser == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Current user not found");
+            Optional<User> userOpt = userRepository.findByEmail(userEmail);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found"));
+            }
+
+            User user = userOpt.get();
+
+            // Validate current password
+            if (!passwordEncoder.matches(passwordDto.getCurrentPassword(), user.getPassword())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Current password is incorrect"));
+            }
+
+            // Validate new password
+            if (!passwordDto.getNewPassword().equals(passwordDto.getConfirmPassword())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "New password and confirmation password do not match"));
+            }
+
+            if (passwordDto.getNewPassword().length() < 6) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "New password must be at least 6 characters long"));
+            }
+
+            // Update password
+            user.setPassword(passwordEncoder.encode(passwordDto.getNewPassword()));
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to change password"));
         }
-
-        // Only allow users to update their own data
-        if (!currentUser.getId().equals(id)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
-        }
-
-        // Update only allowed fields
-        currentUser.setFirstName(updatedUser.getFirstName());
-        currentUser.setLastName(updatedUser.getLastName());
-        currentUser.setAvatar(updatedUser.getAvatar());
-
-        // Don't allow email change for security
-        // currentUser.setEmail(updatedUser.getEmail());
-
-        // Update password if provided
-        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
-            currentUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
-        }
-
-        User savedUser = userRepository.save(currentUser);
-        return ResponseEntity.ok(savedUser);
     }
 
-    // Delete user (only if authenticated user is deleting their own account)
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User currentUser = userRepository.findByEmail(email).orElse(null);
+    /**
+     * Get user by ID (for public profiles)
+     */
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getUserById(@PathVariable Long userId) {
+        try {
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found"));
+            }
 
-        if (currentUser == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Current user not found");
+            User user = userOpt.get();
+
+            // Check if profile is public
+            if (!"public".equals(user.getProfileVisibility())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Profile is not public"));
+            }
+
+            UserProfileDto profileDto = convertToDto(user);
+            return ResponseEntity.ok(profileDto);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to retrieve user profile"));
         }
+    }
 
-        // Only allow users to delete their own account
-        if (!currentUser.getId().equals(id)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    /**
+     * Delete user account
+     */
+    @DeleteMapping("/account")
+    public ResponseEntity<?> deleteAccount(@RequestHeader("Authorization") String authorization) {
+        try {
+            String token = authorization.replace("Bearer ", "");
+            String userEmail = jwtUtil.extractUsername(token);
+
+            Optional<User> userOpt = userRepository.findByEmail(userEmail);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found"));
+            }
+
+            User user = userOpt.get();
+            user.setIsActive(false);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "Account deactivated successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to deactivate account"));
         }
+    }
 
-        userRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+    /**
+     * Test endpoint to verify controller is working
+     */
+    @GetMapping("/test")
+    public ResponseEntity<?> testEndpoint() {
+        return ResponseEntity.ok(Map.of("message", "User controller is working!"));
+    }
+
+    /**
+     * Convert User entity to UserProfileDto
+     */
+    private UserProfileDto convertToDto(User user) {
+        return new UserProfileDto(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getAvatar(),
+                user.getBio(),
+                user.getLocation(),
+                user.getWebsite(),
+                user.getPhone(),
+                user.getDateOfBirth(),
+                user.getPreferredLanguage(),
+                user.getTimezone(),
+                user.getNotificationsEnabled(),
+                user.getProfileVisibility());
     }
 }
