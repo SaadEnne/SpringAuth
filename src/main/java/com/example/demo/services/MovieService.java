@@ -12,6 +12,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,7 @@ public class MovieService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Transactional
     public Movie saveMovieFromTmdb(Long tmdbId) {
         // Check if movie already exists
         Optional<Movie> existingMovie = movieRepository.findByTmdbId(tmdbId);
@@ -72,7 +75,14 @@ public class MovieService {
             movie.setGenres("[]");
         }
 
-        return movieRepository.save(movie);
+        try {
+            return movieRepository.save(movie);
+        } catch (DataIntegrityViolationException ex) {
+            // Another concurrent request likely inserted the same tmdbId.
+            // Load and return the existing movie to make the operation idempotent.
+            return movieRepository.findByTmdbId(tmdbId)
+                    .orElseThrow(() -> ex);
+        }
     }
 
     public void addMovieToUserCategory(User user, Long tmdbId, MovieCategory category) {
