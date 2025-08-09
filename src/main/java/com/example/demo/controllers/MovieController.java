@@ -5,8 +5,11 @@ import com.example.demo.dto.UserMovieRequestDto;
 import com.example.demo.models.MovieCategory;
 import com.example.demo.models.User;
 import com.example.demo.services.MovieService;
+import com.example.demo.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,12 +24,16 @@ public class MovieController {
     @Autowired
     private MovieService movieService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @PostMapping("/user-movie")
     public ResponseEntity<?> handleUserMovieRequest(@RequestBody UserMovieRequestDto request) {
         try {
-            // TODO: Get current user from authentication context
-            // For now, we'll use a mock user - replace this with actual user authentication
-            User currentUser = getCurrentUser(); // This should be implemented based on your auth system
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "User not authenticated"));
+            }
 
             movieService.handleUserMovieRequest(currentUser, request);
             return ResponseEntity.ok()
@@ -39,8 +46,13 @@ public class MovieController {
     @GetMapping("/user/{category}")
     public ResponseEntity<List<MovieDto>> getUserMoviesByCategory(@PathVariable String category) {
         try {
-            // TODO: Get current user from authentication context
-            User currentUser = getCurrentUser(); // This should be implemented based on your auth system
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(401).build();
+            }
+
+            // Clean up duplicates first
+            movieService.cleanupDuplicates(currentUser);
 
             MovieCategory movieCategory = MovieCategory.valueOf(category.toUpperCase());
             List<MovieDto> movies = movieService.getUserMoviesByCategory(currentUser, movieCategory);
@@ -70,6 +82,9 @@ public class MovieController {
     public ResponseEntity<Map<String, Boolean>> checkMovieStatus(@PathVariable Long tmdbId) {
         try {
             User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(401).build();
+            }
 
             Map<String, Boolean> status = new HashMap<>();
             status.put("isFavorite", movieService.isMovieInUserCategory(currentUser, tmdbId, MovieCategory.FAVORITE));
@@ -87,6 +102,12 @@ public class MovieController {
     public ResponseEntity<Map<String, Long>> getUserMovieStatistics() {
         try {
             User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(401).build();
+            }
+
+            // Clean up duplicates first
+            movieService.cleanupDuplicates(currentUser);
 
             Map<String, Long> statistics = new HashMap<>();
             statistics.put("favorites", movieService.getUserMovieCountByCategory(currentUser, MovieCategory.FAVORITE));
@@ -99,12 +120,50 @@ public class MovieController {
         }
     }
 
-    // TODO: Implement this method based on your authentication system
+    @PostMapping("/cleanup-duplicates")
+    public ResponseEntity<Map<String, String>> cleanupDuplicates() {
+        try {
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "User not authenticated"));
+            }
+
+            movieService.cleanupDuplicates(currentUser);
+            return ResponseEntity.ok(Map.of("message", "Duplicates cleaned up successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/test-auth")
+    public ResponseEntity<Map<String, Object>> testAuthentication() {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Authentication successful",
+                "user", Map.of(
+                        "id", currentUser.getId(),
+                        "email", currentUser.getEmail(),
+                        "firstName", currentUser.getFirstName(),
+                        "lastName", currentUser.getLastName())));
+    }
+
     private User getCurrentUser() {
-        // This is a placeholder - implement based on your authentication system
-        // You might get the user from JWT token, session, or security context
-        User mockUser = new User();
-        mockUser.setId(1L); // Replace with actual user ID from authentication
-        return mockUser;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.isAuthenticated() &&
+                !authentication.getName().equals("anonymousUser")) {
+            User user = userRepository.findByEmail(authentication.getName()).orElse(null);
+            if (user == null) {
+                System.out.println("User not found in database: " + authentication.getName());
+            }
+            return user;
+        }
+        System.out.println("No authenticated user found - Authentication: " +
+                (authentication != null ? authentication.getName() : "null"));
+        return null;
     }
 }

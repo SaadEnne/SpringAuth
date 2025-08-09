@@ -23,13 +23,14 @@ public class MovieDto {
     private Boolean isInUserList;
 
     // Default constructor
-    public MovieDto() {}
+    public MovieDto() {
+    }
 
     // Constructor with all fields
-    public MovieDto(Long id, Long tmdbId, String title, String overview, String posterPath, 
-                   String backdropPath, String releaseDate, Double voteAverage, Integer voteCount,
-                   String originalLanguage, String originalTitle, Boolean adult, String status,
-                   String tagline, Integer runtime, List<String> genres, String category, Boolean isInUserList) {
+    public MovieDto(Long id, Long tmdbId, String title, String overview, String posterPath,
+            String backdropPath, String releaseDate, Double voteAverage, Integer voteCount,
+            String originalLanguage, String originalTitle, Boolean adult, String status,
+            String tagline, Integer runtime, List<String> genres, String category, Boolean isInUserList) {
         this.id = id;
         this.tmdbId = tmdbId;
         this.title = title;
@@ -195,4 +196,4 @@ public class MovieDto {
     public void setIsInUserList(Boolean isInUserList) {
         this.isInUserList = isInUserList;
     }
-} 
+}

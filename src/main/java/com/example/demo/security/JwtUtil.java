@@ -15,7 +15,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtil {
-    private Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256); // Random secure key
+    // Use a fixed secret key for consistency across application restarts
+    private static final String SECRET_KEY = "your-secret-key-here-make-it-long-and-secure-at-least-256-bits";
+    private final Key secretKey = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();

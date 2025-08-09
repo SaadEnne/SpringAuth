@@ -86,8 +86,7 @@ public class AuthController {
                     "id", user.getId(),
                     "email", user.getEmail(),
                     "firstName", user.getFirstName(),
-                    "lastName", user.getLastName()
-            ));
+                    "lastName", user.getLastName()));
 
             return ResponseEntity.ok(response);
 

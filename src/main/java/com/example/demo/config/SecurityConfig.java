@@ -53,6 +53,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/users/change-password").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/users/account").authenticated()
 
+                        // Movie endpoints - authentication required
+                        .requestMatchers(HttpMethod.POST, "/api/movies/user-movie").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/movies/user/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/movies/check-status/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/movies/test-auth").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/movies/cleanup-duplicates").authenticated()
+
                         // Legacy endpoints (if still needed)
                         .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/{id}").authenticated()

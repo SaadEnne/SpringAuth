@@ -11,11 +11,11 @@ import java.util.Optional;
 
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
-    
+
     Optional<Movie> findByTmdbId(Long tmdbId);
-    
+
     boolean existsByTmdbId(Long tmdbId);
-    
+
     @Query("SELECT m FROM Movie m WHERE m.tmdbId IN :tmdbIds")
     List<Movie> findByTmdbIds(@Param("tmdbIds") List<Long> tmdbIds);
-} 
+}

@@ -6,7 +6,8 @@ public class UserMovieRequestDto {
     private String action; // ADD, REMOVE
 
     // Default constructor
-    public UserMovieRequestDto() {}
+    public UserMovieRequestDto() {
+    }
 
     // Constructor with all fields
     public UserMovieRequestDto(Long tmdbId, String category, String action) {
@@ -40,4 +41,4 @@ public class UserMovieRequestDto {
     public void setAction(String action) {
         this.action = action;
     }
-} 
+}

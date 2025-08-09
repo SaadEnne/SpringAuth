@@ -86,6 +86,10 @@ public class MovieService {
             userMovie.setMovie(movie);
             userMovie.setCategory(category);
             userMovieRepository.save(userMovie);
+            System.out.println("Added movie " + movie.getTitle() + " to " + category + " for user " + user.getEmail());
+        } else {
+            System.out.println(
+                    "Movie " + movie.getTitle() + " already exists in " + category + " for user " + user.getEmail());
         }
     }
 
@@ -93,6 +97,8 @@ public class MovieService {
         Optional<Movie> movie = movieRepository.findByTmdbId(tmdbId);
         if (movie.isPresent()) {
             userMovieRepository.deleteByUserAndMovieAndCategory(user, movie.get(), category);
+            System.out.println(
+                    "Removed movie " + movie.get().getTitle() + " from " + category + " for user " + user.getEmail());
         }
     }
 
@@ -100,8 +106,11 @@ public class MovieService {
         // Get TMDB IDs for the user's movies in the specified category
         List<Long> tmdbIds = userMovieRepository.findTmdbIdsByUserAndCategory(user, category);
 
+        // Remove duplicates from the list
+        List<Long> distinctTmdbIds = tmdbIds.stream().distinct().toList();
+
         // Fetch detailed movie information from TMDB API
-        List<MovieDto> movies = tmdbApiService.getMoviesByIds(tmdbIds);
+        List<MovieDto> movies = tmdbApiService.getMoviesByIds(distinctTmdbIds);
 
         // Set the category for each movie
         for (MovieDto movie : movies) {
@@ -132,5 +141,32 @@ public class MovieService {
 
     public Long getUserMovieCountByCategory(User user, MovieCategory category) {
         return userMovieRepository.countByUserAndCategory(user, category);
+    }
+
+    /**
+     * Clean up duplicate entries for a user
+     */
+    public void cleanupDuplicates(User user) {
+        List<MovieCategory> categories = List.of(MovieCategory.FAVORITE, MovieCategory.WATCHED,
+                MovieCategory.WATCHLIST);
+
+        for (MovieCategory category : categories) {
+            List<UserMovie> userMovies = userMovieRepository.findByUserAndCategory(user, category);
+
+            // Group by movie ID and keep only the first occurrence
+            userMovies.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(um -> um.getMovie().getTmdbId()))
+                    .forEach((tmdbId, duplicates) -> {
+                        if (duplicates.size() > 1) {
+                            // Keep the first one, remove the rest
+                            for (int i = 1; i < duplicates.size(); i++) {
+                                userMovieRepository.delete(duplicates.get(i));
+                                System.out
+                                        .println("Removed duplicate movie " + duplicates.get(i).getMovie().getTitle() +
+                                                " from " + category + " for user " + user.getEmail());
+                            }
+                        }
+                    });
+        }
     }
 }
