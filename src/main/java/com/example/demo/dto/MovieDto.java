@@ -19,6 +19,7 @@ public class MovieDto {
     private String tagline;
     private Integer runtime;
     private List<String> genres;
+    private String type; // 'movie' or 'tv'
     private String category; // FAVORITE, WATCHED, WATCHLIST
     private Boolean isInUserList;
 
@@ -30,7 +31,7 @@ public class MovieDto {
     public MovieDto(Long id, Long tmdbId, String title, String overview, String posterPath,
             String backdropPath, String releaseDate, Double voteAverage, Integer voteCount,
             String originalLanguage, String originalTitle, Boolean adult, String status,
-            String tagline, Integer runtime, List<String> genres, String category, Boolean isInUserList) {
+            String tagline, Integer runtime, List<String> genres, String type, String category, Boolean isInUserList) {
         this.id = id;
         this.tmdbId = tmdbId;
         this.title = title;
@@ -47,6 +48,7 @@ public class MovieDto {
         this.tagline = tagline;
         this.runtime = runtime;
         this.genres = genres;
+        this.type = type;
         this.category = category;
         this.isInUserList = isInUserList;
     }
@@ -114,6 +116,10 @@ public class MovieDto {
 
     public List<String> getGenres() {
         return genres;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public String getCategory() {
@@ -187,6 +193,10 @@ public class MovieDto {
 
     public void setGenres(List<String> genres) {
         this.genres = genres;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public void setCategory(String category) {

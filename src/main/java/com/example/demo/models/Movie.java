@@ -29,6 +29,7 @@ public class Movie {
     private String tagline;
     private Integer runtime;
     private String genres; // JSON string of genres
+    private String type; // 'movie' or 'tv'
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -101,6 +102,10 @@ public class Movie {
         return genres;
     }
 
+    public String getType() {
+        return type;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -168,6 +173,10 @@ public class Movie {
 
     public void setGenres(String genres) {
         this.genres = genres;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {

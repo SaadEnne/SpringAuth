@@ -35,7 +35,7 @@ public class TmdbApiService {
             String response = restTemplate.getForObject(movieUrl, String.class);
             if (response != null) {
                 JsonNode jsonNode = objectMapper.readTree(response);
-                return mapJsonToMovieOrTvDto(jsonNode);
+                return mapJsonToMovieOrTvDto(jsonNode, "movie");
             }
         } catch (RestClientException ex) {
             // Fallback to TV endpoint (IDs for TV series)
@@ -44,7 +44,7 @@ public class TmdbApiService {
                 String response = restTemplate.getForObject(tvUrl, String.class);
                 if (response != null) {
                     JsonNode jsonNode = objectMapper.readTree(response);
-                    return mapJsonToMovieOrTvDto(jsonNode);
+                    return mapJsonToMovieOrTvDto(jsonNode, "tv");
                 }
             } catch (Exception ignore) {
                 // Will return null below
@@ -68,7 +68,7 @@ public class TmdbApiService {
         return movies;
     }
 
-    private MovieDto mapJsonToMovieOrTvDto(JsonNode jsonNode) {
+    private MovieDto mapJsonToMovieOrTvDto(JsonNode jsonNode, String type) {
         MovieDto movieDto = new MovieDto();
 
         movieDto.setTmdbId(jsonNode.get("id").asLong());
@@ -121,6 +121,9 @@ public class TmdbApiService {
             }
         }
         movieDto.setGenres(genres);
+
+        // Set the type
+        movieDto.setType(type);
 
         return movieDto;
     }
