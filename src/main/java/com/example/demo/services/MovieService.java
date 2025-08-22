@@ -75,6 +75,9 @@ public class MovieService {
             movie.setGenres("[]");
         }
 
+        // Set the type
+        movie.setType(movieDto.getType());
+
         try {
             return movieRepository.save(movie);
         } catch (DataIntegrityViolationException ex) {
